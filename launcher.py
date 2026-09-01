@@ -34,7 +34,10 @@ def trim_memory():
 WHITELIST_MOD_KEYWORDS = [
     'replaymod', 'replay-mod', 'flashback', 'sodium', 'lithium', 'ferritecore',
     'entityculling', 'immediatelyfast', 'fabric-api', 'fabricloader', 'modmenu',
-    'iris', 'indium', 'appleskin', 'cloth-config', 'yacl'
+    'iris', 'indium', 'appleskin', 'cloth-config', 'yacl', 'femalegender', 'female-gender',
+    'female_gender', 'wildfire_gender', 'gender', 'impactframes', 'impact-frames',
+    'impact_frames', 'pulse', 'pulsevisuals', 'pulse-mod', 'pulse_mod',
+    'chat_heads', 'chatheads', 'physicsmod', 'physics'
 ]
 
 FUNTIME_FORBIDDEN_KEYWORDS = [
@@ -52,9 +55,11 @@ FUNTIME_FORBIDDEN_KEYWORDS = [
     'autojumpreset', 'dontheatteammates', 'donthitteammates', 'cleancut', 'autoattack',
     'autoaim', 'fevervisuals', 'luminarvisuals', 'ascart', 'simplevisuals',
     'wavevisuals', 'clientcommands', 'wurst', 'meteor', 'aristois', 'liquidbounce',
-    'thunderhack', 'impact', 'inertia', 'sigma', 'bleachhack', 'future', 'rusherhack',
-    'boze', 'kura', 'nursultan', 'celestial', 'expensive', 'akrien', 'wild', 'delta',
-    'minced', 'vape', 'doomsday', 'releon', 'deadcode', 'zamorozka', 'matrix', 'dd'
+    'thunderhack', 'impactclient', 'impact-client', 'impact_client', 'impact-4', 'impact-5',
+    'inertia', 'sigma', 'bleachhack', 'future', 'rusherhack', 'boze', 'kuraclient',
+    'nursultan', 'celestial', 'expensive', 'akrien', 'wildclient', 'deltaclient',
+    'minced', 'vape', 'doomsday', 'cortex', 'mhub', 'releon', 'deadcode', 'zamorozka',
+    'matrixclient', 'dd-client', 'dd 1.0'
 ]
 
 
