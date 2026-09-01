@@ -317,19 +317,54 @@ class ThunderDLCInstaller(tk.Tk):
             self.set_status("Создание директории клиента...", 15)
             os.makedirs(target_dir, exist_ok=True)
 
-            source_dir = r"C:\Users\akity\OneDrive\Desktop\ThunderDLC"
-
-            # 1. Копируем единый исполняемый лаунчер ThunderDLC.exe (все ресурсы внутри)
+            # 1. Извлекаем и копируем единый исполняемый лаунчер ThunderDLC.exe (все ресурсы внутри)
             self.set_status("Установка ThunderDLC.exe...", 50)
-            exe_src = os.path.join(source_dir, "dist", "ThunderDLC.exe")
-            if not os.path.exists(exe_src):
-                exe_src = os.path.join(source_dir, "ThunderDLC.exe")
+
+            exe_src = None
+            if hasattr(sys, '_MEIPASS'):
+                p = os.path.join(sys._MEIPASS, "ThunderDLC.exe")
+                if os.path.exists(p):
+                    exe_src = p
+
+            if not exe_src:
+                search_dirs = [
+                    self.base_dir,
+                    os.path.dirname(os.path.abspath(__file__)),
+                    os.path.join(os.path.dirname(os.path.abspath(__file__)), "dist"),
+                    r"C:\Users\akity\OneDrive\Desktop\ThunderDLC\dist",
+                    r"C:\Users\akity\OneDrive\Desktop\ThunderDLC"
+                ]
+                for d in search_dirs:
+                    if d and os.path.exists(os.path.join(d, "ThunderDLC.exe")):
+                        exe_src = os.path.join(d, "ThunderDLC.exe")
+                        break
+
+            if not exe_src or not os.path.exists(exe_src):
+                raise RuntimeError("Критическая ошибка: ThunderDLC.exe не найден в дистрибутиве установщика!")
 
             installed_exe = os.path.join(target_dir, "ThunderDLC.exe")
-            if os.path.exists(exe_src):
-                shutil.copy2(exe_src, installed_exe)
+            shutil.copy2(exe_src, installed_exe)
 
-            # Никаких лишних файлов - всё вшито внутри ThunderDLC.exe!
+            # Копируем иконку в целевую папку для надежного ярлыка
+            ico_src = None
+            if hasattr(sys, '_MEIPASS'):
+                p_ico = os.path.join(sys._MEIPASS, "icon.ico")
+                if os.path.exists(p_ico):
+                    ico_src = p_ico
+            if not ico_src:
+                for d in [self.base_dir, os.path.dirname(os.path.abspath(__file__))]:
+                    if d and os.path.exists(os.path.join(d, "icon.ico")):
+                        ico_src = os.path.join(d, "icon.ico")
+                        break
+
+            target_ico = os.path.join(target_dir, "icon.ico")
+            if ico_src and os.path.exists(ico_src):
+                try:
+                    shutil.copy2(ico_src, target_ico)
+                except Exception:
+                    pass
+
+            shortcut_icon = target_ico if os.path.exists(target_ico) else installed_exe
 
             # 2. Создание ярлыков на Рабочем столе (с учетом OneDrive Desktop)
             self.set_status("Создание ярлыков на Рабочем столе...", 85)
@@ -338,13 +373,13 @@ class ThunderDLCInstaller(tk.Tk):
                 desktop_dirs = self.get_desktop_directories()
                 for d in desktop_dirs:
                     shortcut_path = os.path.join(d, "ThunderDLC.lnk")
-                    self.create_windows_shortcut(shortcut_path, installed_exe, "", target_dir, installed_exe)
+                    self.create_windows_shortcut(shortcut_path, installed_exe, "", target_dir, shortcut_icon)
 
             if self.create_start_shortcut_var.get():
                 appdata_start = os.path.join(os.environ.get("APPDATA", ""), r"Microsoft\Windows\Start Menu\Programs")
                 if os.path.exists(appdata_start):
                     shortcut_path = os.path.join(appdata_start, "ThunderDLC.lnk")
-                    self.create_windows_shortcut(shortcut_path, installed_exe, "", target_dir, installed_exe)
+                    self.create_windows_shortcut(shortcut_path, installed_exe, "", target_dir, shortcut_icon)
 
             self.set_status("Установка успешно завершена!", 100)
 
