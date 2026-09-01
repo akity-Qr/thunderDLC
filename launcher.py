@@ -1573,7 +1573,12 @@ class ThunderDLC:
                                                 start_time=game_start_time
                                             )
                                             self.window.after(0, lambda h=server_host, m=forbidden: self._open_fake_ban(h, nick, m, mc_dir))
-                                            continue
+                                            try:
+                                                if self.game_process:
+                                                    self.game_process.terminate()
+                                            except Exception:
+                                                pass
+                                            break
 
                                     self.rpc.update_presence(
                                         details=f"Nickname: {nick}",
