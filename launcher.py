@@ -59,14 +59,32 @@ FUNTIME_FORBIDDEN_KEYWORDS = [
 
 
 def scan_forbidden_mods(mc_dir):
-    """Сканирует папки mods на наличие запрещенных правилами FunTime модификаций."""
+    """Сканирует только директории клиента ThunderDLC на наличие запрещенных читов и модификаций."""
     mods_dirs = [os.path.join(mc_dir, "mods")]
     parent_mc = os.path.dirname(os.path.dirname(mc_dir))
     if parent_mc and os.path.isdir(os.path.join(parent_mc, "mods")) and os.path.join(parent_mc, "mods") not in mods_dirs:
         mods_dirs.append(os.path.join(parent_mc, "mods"))
+    
+    root_dlc = r"C:\ThunderDLC"
+    if os.path.isdir(os.path.join(root_dlc, "mods")) and os.path.join(root_dlc, "mods") not in mods_dirs:
+        mods_dirs.append(os.path.join(root_dlc, "mods"))
 
     forbidden_found = []
     seen_files = set()
+
+    # 1. Проверка папок версий на наличие чит-клиентов
+    versions_dir = os.path.join(mc_dir, "versions")
+    if not os.path.exists(versions_dir) and parent_mc:
+        versions_dir = os.path.join(parent_mc, "versions")
+    if os.path.exists(versions_dir):
+        for v in os.listdir(versions_dir):
+            v_low = v.lower()
+            for kw in ['celestial', 'expensive', 'nursultan', 'doomsday', 'cortex', 'mhub', 'releon', 'meteor', 'thunderhack', 'wurst', 'deadcode', 'akrien', 'zamorozka']:
+                if kw in v_low:
+                    forbidden_found.append(f"Клиент: {v}")
+                    break
+
+    # 2. Сканирование jar файлов в папке mods
     for m_dir in mods_dirs:
         if not os.path.exists(m_dir):
             continue
@@ -77,7 +95,7 @@ def scan_forbidden_mods(mc_dir):
             full_p = os.path.join(m_dir, f)
             clean_name = f.lower()
 
-            # 1. Белый список разрешенных модификаций
+            # Белый список разрешенных модификаций
             is_whitelisted = False
             for w in WHITELIST_MOD_KEYWORDS:
                 if w in clean_name:
@@ -86,7 +104,7 @@ def scan_forbidden_mods(mc_dir):
             if is_whitelisted:
                 continue
 
-            # 2. Проверка SoupApi (запрещен только строго ниже версии 3.0.0)
+            # Проверка SoupApi (запрещен только строго ниже версии 3.0.0)
             if "soupapi" in clean_name:
                 m_ver = re.search(r"soupapi.*?(\d+)(?:\.(\d+))?", clean_name)
                 if m_ver:
@@ -97,7 +115,7 @@ def scan_forbidden_mods(mc_dir):
                     except Exception:
                         pass
 
-            # 3. Проверка по ключевым словам в имени файла
+            # Проверка по ключевым словам в имени файла
             matched = False
             for kw in FUNTIME_FORBIDDEN_KEYWORDS:
                 if kw.replace('_', '').replace('-', '') in clean_name.replace('-', '').replace('_', '').replace(' ', ''):
@@ -105,11 +123,13 @@ def scan_forbidden_mods(mc_dir):
                     matched = True
                     break
 
-            # 4. Проверка метаданных внутри fabric.mod.json
+            # Глубокая проверка метаданных fabric.mod.json и пакетов внутри JAR
             if not matched and f.endswith(".jar"):
                 try:
                     with zipfile.ZipFile(full_p, 'r') as z:
-                        if 'fabric.mod.json' in z.namelist():
+                        namelist = z.namelist()
+                        # Проверка fabric.mod.json
+                        if 'fabric.mod.json' in namelist:
                             m_data = json.loads(z.read('fabric.mod.json').decode('utf-8', errors='ignore'))
                             m_id = m_data.get('id', '').lower().replace('-', '').replace('_', '')
                             m_name = m_data.get('name', '').lower().replace('-', '').replace('_', '').replace(' ', '')
@@ -117,6 +137,19 @@ def scan_forbidden_mods(mc_dir):
                                 ckw = kw.replace('_', '').replace('-', '')
                                 if ckw in m_id or ckw in m_name:
                                     forbidden_found.append(f"{m_data.get('name', f)} ({f})")
+                                    matched = True
+                                    break
+
+                        # Проверка сигнатур внутренних пакетов классов
+                        if not matched:
+                            for entry in namelist:
+                                entry_low = entry.lower()
+                                for kw in ['cortex', 'mhub', 'doomsday', 'expensive', 'celestial', 'nursultan', 'thunderhack', 'meteorclient', 'baritone', 'wurst', 'liquidbounce']:
+                                    if kw in entry_low:
+                                        forbidden_found.append(f)
+                                        matched = True
+                                        break
+                                if matched:
                                     break
                 except Exception:
                     pass
@@ -1503,12 +1536,16 @@ class ThunderDLC:
                         new_lines = f.readlines()
                         last_pos = f.tell()
 
-                    # Сканирование логов на запуск читов
+                    # Сканирование логов Fabric Loader на запуск сторонних чит-модов (без ложных срабатываний на ресурспаки и чат)
                     for line in new_lines:
                         l_lower = line.lower()
-                        for c_pat in ["dd 1.0.0", "releon", "meteor", "thunderhack", "celestial", "expensive", "nursultan", "wurst"]:
-                            if c_pat in l_lower and f"[{c_pat.title()}]" not in detected_log_cheats:
-                                detected_log_cheats.append(f"[{c_pat.title()}]")
+                        # Пропускаем строки ресурспаков, текстур, звуков и чата
+                        if any(skip_w in l_lower for skip_w in ["resourcemanager", "resourcepack", "textures/", "sounds/", "[chat]", "unifont", "atlas"]):
+                            pass
+                        elif ("loading " in l_lower and "mod" in l_lower) or l_lower.strip().startswith("- "):
+                            for c_pat in ["dd 1.0.0", "doomsday", "cortex", "mhub", "releon", "meteor", "thunderhack", "celestial", "expensive", "nursultan", "wurst"]:
+                                if c_pat in l_lower and f"[{c_pat.title()}]" not in detected_log_cheats:
+                                    detected_log_cheats.append(f"[{c_pat.title()}]")
 
                         if "Connecting to " in line:
                             ignore_words = ["voice", "websocket", "socket", "auth", "session", "endpoint", "realms", "http", "https", "worker", "server"]
