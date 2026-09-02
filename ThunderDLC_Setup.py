@@ -345,26 +345,17 @@ class ThunderDLCInstaller(tk.Tk):
             installed_exe = os.path.join(target_dir, "ThunderDLC.exe")
             shutil.copy2(exe_src, installed_exe)
 
-            # Копируем иконку в целевую папку для надежного ярлыка
-            ico_src = None
-            if hasattr(sys, '_MEIPASS'):
-                p_ico = os.path.join(sys._MEIPASS, "icon.ico")
-                if os.path.exists(p_ico):
-                    ico_src = p_ico
-            if not ico_src:
-                for d in [self.base_dir, os.path.dirname(os.path.abspath(__file__))]:
-                    if d and os.path.exists(os.path.join(d, "icon.ico")):
-                        ico_src = os.path.join(d, "icon.ico")
-                        break
+            # Очищаем корневую папку от открытых картинок, чтобы всё выглядело чисто и аккуратно
+            for img_name in ["icon.ico", "icon.png", "bg.jpg", "bg_menu.gif", "bg_menu.png"]:
+                loose_img = os.path.join(target_dir, img_name)
+                if os.path.exists(loose_img):
+                    try:
+                        os.remove(loose_img)
+                    except Exception:
+                        pass
 
-            target_ico = os.path.join(target_dir, "icon.ico")
-            if ico_src and os.path.exists(ico_src):
-                try:
-                    shutil.copy2(ico_src, target_ico)
-                except Exception:
-                    pass
-
-            shortcut_icon = target_ico if os.path.exists(target_ico) else installed_exe
+            # Ярлык берёт встроенную в ThunderDLC.exe иконку напрямую
+            shortcut_icon = installed_exe
 
             # 2. Создание ярлыков на Рабочем столе (с учетом OneDrive Desktop)
             self.set_status("Создание ярлыков на Рабочем столе...", 85)
