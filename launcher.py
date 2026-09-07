@@ -1661,6 +1661,26 @@ class ThunderDLC:
                 if os.path.exists(src_bg) and not os.path.exists(dst_bg):
                     shutil.copy2(src_bg, dst_bg)
 
+            # Автоматическая синхронизация мода ThunderDLC (кастомное главное меню)
+            mods_dir = os.path.join(mc_dir, "mods")
+            os.makedirs(mods_dir, exist_ok=True)
+            target_mod_path = os.path.join(mods_dir, "thunderdlc-6.7.jar")
+            src_mod_candidates = [
+                os.path.join(getattr(sys, '_MEIPASS', ''), "thunderdlc-6.7.jar"),
+                os.path.join(base_dir, "thunderdlc-6.7.jar"),
+                os.path.join(base_dir, "mods", "thunderdlc-6.7.jar"),
+                r"C:\ThunderDLC\thunderdlc-6.7.jar",
+                r"C:\ThunderDLC\mods\thunderdlc-6.7.jar",
+                r"C:\Users\akity\OneDrive\Desktop\ThunderDLC\thunderdlc-6.7.jar"
+            ]
+            for candidate in src_mod_candidates:
+                if candidate and os.path.exists(candidate) and os.path.getsize(candidate) > 0:
+                    try:
+                        shutil.copy2(candidate, target_mod_path)
+                        break
+                    except Exception:
+                        pass
+
             version_name = version_data["name"]
             # Берём fabric_version из version_data, если не задан — из глобального конфига
             fabric_loader_version = version_data.get("fabric_version") or self.config.get("fabric_version", "0.19.3")
