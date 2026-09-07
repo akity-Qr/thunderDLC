@@ -992,21 +992,27 @@ class SettingsWindow(ctk.CTkToplevel):
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
-def find_system_java_21(mc_dir=None):
+def find_system_java(version_name="1.21.4", mc_dir=None):
+    v_str = str(version_name).strip()
+    if v_str.startswith("26.") or v_str == "26.2":
+        min_ver = 25
+    elif v_str.startswith("1.21") or v_str.startswith("1.22"):
+        min_ver = 21
+    elif v_str.startswith("1.20") or v_str.startswith("1.19") or v_str.startswith("1.18") or v_str.startswith("1.17"):
+        min_ver = 17
+    else:
+        min_ver = 8
+
     candidates = []
     if "JAVA_HOME" in os.environ:
         candidates.append(os.path.join(os.environ["JAVA_HOME"], "bin", "javaw.exe"))
         candidates.append(os.path.join(os.environ["JAVA_HOME"], "bin", "java.exe"))
 
+    search_dirs = []
     if mc_dir:
-        rt_dir = os.path.join(mc_dir, "runtime")
-        if os.path.exists(rt_dir):
-            for root, dirs, files in os.walk(rt_dir):
-                for f in ["javaw.exe", "java.exe"]:
-                    if f in files:
-                        candidates.append(os.path.join(root, f))
-
-    roots = [
+        search_dirs.append(os.path.join(mc_dir, "runtime"))
+    search_dirs.extend([
+        r"C:\ThunderDLC\.minecraft\runtime",
         os.path.expanduser("~/.jdks"),
         r"C:\Program Files\Java",
         r"C:\Program Files\Eclipse Adoptium",
@@ -1014,10 +1020,11 @@ def find_system_java_21(mc_dir=None):
         r"C:\Program Files\BellSoft",
         r"C:\Program Files\Amazon Corretto",
         r"C:\Program Files (x86)\Java"
-    ]
-    for r in roots:
-        if os.path.exists(r):
-            for root, dirs, files in os.walk(r):
+    ])
+
+    for rt in search_dirs:
+        if os.path.exists(rt):
+            for root, dirs, files in os.walk(rt):
                 for f in ["javaw.exe", "java.exe"]:
                     if f in files:
                         candidates.append(os.path.join(root, f))
@@ -1030,23 +1037,59 @@ def find_system_java_21(mc_dir=None):
         startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
         startupinfo.wShowWindow = 0
 
+    found_javas = []
+    seen = set()
     for c in candidates:
-        if os.path.exists(c):
-            try:
-                out = subprocess.run(
-                    [c, "-version"],
-                    capture_output=True,
-                    text=True,
-                    timeout=2,
-                    creationflags=creation_flags,
-                    startupinfo=startupinfo
-                )
-                err = out.stderr or out.stdout
-                for ver_prefix in ["21.", "22.", "23.", "24.", "25."]:
-                    if ver_prefix in err:
-                        return c
-            except Exception:
-                pass
+        norm = os.path.normpath(c)
+        if norm in seen or not os.path.exists(norm):
+            continue
+        seen.add(norm)
+
+        check_bin = norm
+        if check_bin.lower().endswith("javaw.exe"):
+            sib = os.path.join(os.path.dirname(norm), "java.exe")
+            if os.path.exists(sib):
+                check_bin = sib
+
+        try:
+            out = subprocess.run(
+                [check_bin, "-version"],
+                capture_output=True,
+                text=True,
+                timeout=2,
+                creationflags=creation_flags,
+                startupinfo=startupinfo
+            )
+            err = out.stderr or out.stdout
+            for line in err.splitlines():
+                if "version" in line:
+                    parts = line.split('"')
+                    if len(parts) >= 2:
+                        v_str_raw = parts[1].split('.')[0]
+                        if v_str_raw == "1" and len(parts[1].split('.')) > 1:
+                            v_str_raw = parts[1].split('.')[1]
+                        num = int(v_str_raw)
+
+                        launch_bin = norm
+                        if launch_bin.lower().endswith("java.exe"):
+                            sib_w = os.path.join(os.path.dirname(norm), "javaw.exe")
+                            if os.path.exists(sib_w):
+                                launch_bin = sib_w
+
+                        found_javas.append((num, launch_bin))
+                        break
+        except Exception:
+            pass
+
+    suitable = [j for j in found_javas if j[0] >= min_ver]
+    if suitable:
+        suitable.sort(key=lambda x: x[0])
+        return suitable[0][1] if min_ver < 25 else suitable[-1][1]
+
+    if found_javas:
+        found_javas.sort(key=lambda x: x[0], reverse=True)
+        return found_javas[0][1]
+
     return None
 
 
@@ -1715,18 +1758,18 @@ class ThunderDLC:
                 TurboMinecraftInstaller.install(version_name, fabric_loader_version, base_mc_dir, status_callback, progress_callback)
                 self.set_progress_val(0)
 
-            # 3. Мгновенный поиск Java 21 на ПК
-            self.set_status("Подготовка Java 21...", "#AAAAAA")
-            java_exec = find_system_java_21(base_mc_dir)
+            # 3. Мгновенный поиск подходящей Java на ПК (Java 25 для 26.2, Java 21 для 1.21.x)
+            self.set_status(f"Подготовка Java для {version_name}...", "#AAAAAA")
+            java_exec = find_system_java(version_name, base_mc_dir)
 
             if not java_exec or not os.path.exists(java_exec):
-                # Резервная загрузка только если Java 21 вообще нет на компьютере (сохраняем в общую папку)
+                # Резервная загрузка только если подходящей Java вообще нет на компьютере
                 custom_java_dir = os.path.join(base_mc_dir, "runtime", "java-21-adoptium")
                 custom_java_bin = os.path.join(custom_java_dir, "bin", "javaw.exe" if platform.system() == "Windows" else "java")
                 if os.path.exists(custom_java_bin):
                     java_exec = custom_java_bin
                 else:
-                    self.set_status("Загрузка Java 21 (Adoptium)...", "#AAAAAA")
+                    self.set_status("Загрузка Java (Adoptium)...", "#AAAAAA")
                     os.makedirs(os.path.join(base_mc_dir, "runtime"), exist_ok=True)
                     jdk_url = "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.3%2B9/OpenJDK21U-jdk_x64_windows_hotspot_21.0.3_9.zip"
                     zip_path = os.path.join(base_mc_dir, "runtime", "java21.zip")
