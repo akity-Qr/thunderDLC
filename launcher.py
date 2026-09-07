@@ -1739,32 +1739,15 @@ class ThunderDLC:
 
             target_window_title = f"ThunderDLC {version_name}"
 
-            # Безопасное и быстрое выделение памяти под любые ПК
+            # Стабильные JVM параметры
             ram_val = self.config.get("ram", "4G").strip()
             jvm_args_list = [
                 f"-Xmx{ram_val}",
                 "-Xms512M",
-                # Оптимальный современный сборщик мусора G1GC
                 "-XX:+UnlockExperimentalVMOptions",
                 "-XX:+UseG1GC",
-                "-XX:G1NewSizePercent=20",
-                "-XX:G1ReservePercent=15",
-                "-XX:MaxGCPauseMillis=30",
-                "-XX:InitiatingHeapOccupancyPercent=25",
-                "-XX:G1MixedGCLiveThresholdPercent=85",
-                "-XX:SurvivorRatio=8",
-                "-XX:+PerfDisableSharedMem",
-                # Быстрый байткод и JIT компилятор
-                "-XX:+TieredCompilation",
-                "-XX:+UseStringDeduplication",
                 "-Dfml.ignorePatchDiscrepancies=true",
-                "-Dfml.ignoreInvalidMinecraftCertificates=true",
-                # Аппаратное ускорение
-                "-Dsun.java2d.opengl=true",
-                "-Dsun.java2d.noddraw=true",
-                "-Dsun.java2d.pmoffscreen=true",
-                f"-Dwindow.title={target_window_title}",
-                f"-Dminecraft.app.title={target_window_title}"
+                "-Dfml.ignoreInvalidMinecraftCertificates=true"
             ]
             custom_args = self.config.get("jvm_args", "").strip()
             if custom_args:
@@ -1785,7 +1768,6 @@ class ThunderDLC:
             }
 
             command = minecraft_launcher_lib.command.get_minecraft_command(fabric_profile_id, base_mc_dir, options)
-            command.extend(["--windowTitle", target_window_title])
 
             if self.config.get("fullscreen", False):
                 command.append("--fullscreen")
@@ -1801,13 +1783,6 @@ class ThunderDLC:
             self.window.after(1000, trim_memory)
 
             popen_kwargs = {"cwd": mc_dir, "env": env}
-            if platform.system() == "Windows":
-                popen_kwargs["creationflags"] = subprocess.CREATE_NO_WINDOW
-                si = subprocess.STARTUPINFO()
-                si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-                si.wShowWindow = 0
-                popen_kwargs["startupinfo"] = si
-
             self.game_process = subprocess.Popen(command, **popen_kwargs)
             game_start_time = int(time.time())
             threading.Thread(target=self._monitor_game_log, args=(mc_dir, nick, version_name, game_start_time), daemon=True).start()
