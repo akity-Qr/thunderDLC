@@ -1739,38 +1739,30 @@ class ThunderDLC:
 
             target_window_title = f"ThunderDLC {version_name}"
 
+            # Безопасное и быстрое выделение памяти под любые ПК
+            ram_val = self.config.get("ram", "4G").strip()
             jvm_args_list = [
-                f"-Xmx{self.config['ram']}",
-                f"-Xms{self.config['ram']}",
-                # Встроенная ультра-оптимизация под Minecraft
+                f"-Xmx{ram_val}",
+                "-Xms512M",
+                # Оптимальный современный сборщик мусора G1GC
                 "-XX:+UnlockExperimentalVMOptions",
                 "-XX:+UseG1GC",
                 "-XX:G1NewSizePercent=20",
                 "-XX:G1ReservePercent=15",
-                "-XX:MaxGCPauseMillis=25",
-                "-XX:G1HeapRegionSize=32M",
-                "-XX:G1MixedGCCountTarget=4",
-                "-XX:InitiatingHeapOccupancyPercent=15",
-                "-XX:G1MixedGCLiveThresholdPercent=90",
-                "-XX:G1RSetUpdatingPauseTimePercent=5",
-                "-XX:SurvivorRatio=32",
+                "-XX:MaxGCPauseMillis=30",
+                "-XX:InitiatingHeapOccupancyPercent=25",
+                "-XX:G1MixedGCLiveThresholdPercent=85",
+                "-XX:SurvivorRatio=8",
                 "-XX:+PerfDisableSharedMem",
-                "-XX:MaxTenuringThreshold=1",
-                "-XX:+ParallelRefProcEnabled",
-                "-XX:+AlwaysPreTouch",  # Выделяет память заранее, убирая лаги и зависания 'Не отвечает'
                 # Быстрый байткод и JIT компилятор
                 "-XX:+TieredCompilation",
                 "-XX:+UseStringDeduplication",
-                "-XX:+OptimizeStringConcat",
                 "-Dfml.ignorePatchDiscrepancies=true",
                 "-Dfml.ignoreInvalidMinecraftCertificates=true",
-                # Аппаратное ускорение OpenGL и отключение софтверного DirectDraw
+                # Аппаратное ускорение
                 "-Dsun.java2d.opengl=true",
                 "-Dsun.java2d.noddraw=true",
                 "-Dsun.java2d.pmoffscreen=true",
-                # Защита от инжекта читов (блокируем JVM Attach API)
-                "-XX:+DisableAttachMechanism",
-                "-Djdk.attach.allowAttachSelf=false",
                 f"-Dwindow.title={target_window_title}",
                 f"-Dminecraft.app.title={target_window_title}"
             ]
