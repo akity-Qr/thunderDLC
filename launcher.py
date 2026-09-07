@@ -1768,6 +1768,8 @@ class ThunderDLC:
             }
 
             command = minecraft_launcher_lib.command.get_minecraft_command(fabric_profile_id, base_mc_dir, options)
+            # Автоматическая фильтрация флагов, не поддерживаемых версией Java
+            command = [arg for arg in command if not arg.startswith("--sun-misc-unsafe-memory-access=")]
 
             if self.config.get("fullscreen", False):
                 command.append("--fullscreen")
