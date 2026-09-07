@@ -65,45 +65,6 @@
       ]
     },
     {
-      "name": "1.21.11",
-      "display_name": "ThunderClient 1.21.11",
-      "type": "fabric",
-      "fabric_version": "0.19.3",
-      "mc_subdir": "1.21.11",
-      "mods": [
-        {
-          "name": "fabric-api-0.141.5+1.21.11.jar",
-          "url": "https://cdn.modrinth.com/data/P7dR8mSH/versions/zGF3drOQ/fabric-api-0.141.5%2B1.21.11.jar",
-          "path": "mods/fabric-api-0.141.5+1.21.11.jar"
-        },
-        {
-          "name": "sodium-fabric-0.8.14+mc1.21.11.jar",
-          "url": "https://cdn.modrinth.com/data/AANobbMI/versions/rkdTcxoT/sodium-fabric-0.8.14%2Bmc1.21.11.jar",
-          "path": "mods/sodium-fabric-0.8.14+mc1.21.11.jar"
-        },
-        {
-          "name": "lithium-fabric-0.21.4+mc1.21.11.jar",
-          "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/Ow7wA0kG/lithium-fabric-0.21.4%2Bmc1.21.11.jar",
-          "path": "mods/lithium-fabric-0.21.4+mc1.21.11.jar"
-        },
-        {
-          "name": "ferritecore-8.2.0-fabric.jar",
-          "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/Ii0gP3D8/ferritecore-8.2.0-fabric.jar",
-          "path": "mods/ferritecore-8.2.0-fabric.jar"
-        },
-        {
-          "name": "entityculling-fabric-1.10.5-mc1.21.11.jar",
-          "url": "https://cdn.modrinth.com/data/NNAgCjsB/versions/sP0vNbeN/entityculling-fabric-1.10.5-mc1.21.11.jar",
-          "path": "mods/entityculling-fabric-1.10.5-mc1.21.11.jar"
-        },
-        {
-          "name": "ImmediatelyFast-Fabric-1.14.3+1.21.11.jar",
-          "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/4EwhsTu7/ImmediatelyFast-Fabric-1.14.3%2B1.21.11.jar",
-          "path": "mods/ImmediatelyFast-Fabric-1.14.3+1.21.11.jar"
-        }
-      ]
-    },
-    {
       "name": "1.20.2",
       "display_name": "ThunderClient 1.20.2",
       "type": "fabric",
@@ -177,6 +138,6 @@
       ]
     }
   ],
-  "selected_version": "ThunderClient 1.21.11",
+  "selected_version": "ThunderClient 1.21.4",
   "discord_client_id": "1544251893281202246"
 }
